@@ -1,0 +1,36 @@
+# .gitmodules
+#
+# Este archivo se completa automáticamente cuando agregás un subtree.
+# NO uses git submodules — usá git subtree (más simple, sin fricción).
+#
+# ─── CÓMO AGREGAR UNA APP ────────────────────────────────────────────────────
+#
+# 1. Creá el repo de la app en GitHub (ej: github.com/lucaasrojas/morse-trainer)
+#
+# 2. Agregalo como subtree en este repo:
+#    git subtree add \
+#      --prefix=src/app/apps/morse-trainer \
+#      https://github.com/lucaasrojas/morse-trainer \
+#      main --squash
+#
+# 3. Para pushear cambios al repo de la app:
+#    git subtree push \
+#      --prefix=src/app/apps/morse-trainer \
+#      https://github.com/lucaasrojas/morse-trainer \
+#      main
+#
+# 4. Para pulllear cambios del repo de la app:
+#    git subtree pull \
+#      --prefix=src/app/apps/morse-trainer \
+#      https://github.com/lucaasrojas/morse-trainer \
+#      main --squash
+#
+# 5. Registrá la URL para no tener que escribirla siempre:
+#    git remote add morse-trainer https://github.com/lucaasrojas/morse-trainer
+#    # Después podés usar simplemente:
+#    git subtree pull --prefix=src/app/apps/morse-trainer morse-trainer main --squash
+#
+# ─── APPS REGISTRADAS ────────────────────────────────────────────────────────
+#
+# (vacío por ahora — se completa a medida que agregás apps)
+#
