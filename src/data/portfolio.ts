@@ -92,6 +92,18 @@ export const apps: App[] = [
   //   internal: true,
   //   icon: '📡',
   // },
+    {
+    slug: 'morse-trainer',
+    title: 'Morse Trainer',
+    description: 'Entrenador de código Morse con repetición espaciada.',
+    longDescription: 'App para aprender Morse con mnemonics en español y sistema SRS.',
+    status: 'wip',
+    tags: ['React', 'TypeScript', 'SRS'],
+    href: '/apps/morse-trainer',
+    repo: 'https://github.com/lucaasrojas/morse-code-trainer',
+    internal: true,
+    icon: '📡',
+  }
 
   // Ejemplo de app externa (redirect a otra URL):
   // {

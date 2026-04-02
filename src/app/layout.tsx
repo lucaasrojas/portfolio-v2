@@ -1,12 +1,10 @@
 import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
-import { Playfair_Display, Geist } from 'next/font/google'
-import './globals.css'
+import { Playfair_Display } from 'next/font/google'
 import { siteConfig } from '@/data/portfolio'
 import { cn } from "@/lib/utils";
-
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+import './globals.css'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -32,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={cn(GeistSans.variable, GeistMono.variable, playfair.variable, "font-sans", geist.variable)}
+      className={cn(GeistSans.variable, GeistMono.variable, playfair.variable, "font-sans")}
     >
       <body className="font-sans antialiased">{children}</body>
     </html>
