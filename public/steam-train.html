@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ferrocarril de Vapor</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; overflow: hidden; font-family: 'Georgia', serif; }
+  canvas { display: block; }
+  #hud {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 20px 40px 28px;
+    background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, transparent 100%);
+    display: flex; align-items: flex-end; justify-content: space-between;
+    pointer-events: none;
+  }
+  .hud-block { display: flex; flex-direction: column; gap: 6px; }
+  .hud-label { font-size: 9px; letter-spacing: 4px; text-transform: uppercase; color: rgba(255,220,120,0.6); }
+  .hud-value { font-size: 52px; font-weight: bold; color: #ffe87c; line-height: 1; text-shadow: 0 0 20px rgba(255,220,100,0.5); }
+  .hud-unit  { font-size: 13px; color: rgba(255,220,120,0.5); letter-spacing: 2px; margin-top: -4px; }
+  .throttle-track { width: 200px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+  .throttle-fill  { height: 100%; border-radius: 4px; transition: width 0.2s ease; background: linear-gradient(to right, #4caf50, #ffe87c, #ff5722); }
+  .controls-hint {
+    position: fixed; top: 20px; right: 24px;
+    color: rgba(255,255,255,0.45); font-size: 12px; letter-spacing: 1px;
+    text-align: right; line-height: 2; pointer-events: none;
+  }
+  .world-info {
+    position: fixed; top: 20px; left: 24px;
+    color: rgba(255,255,255,0.55); font-size: 12px; letter-spacing: 2px;
+    line-height: 2; pointer-events: none;
+  }
+  .world-info span { color: rgba(255,220,120,0.8); }
+  #steam-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; overflow: hidden; }
+  .steam-puff {
+    position: absolute; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+    animation: steamRise 3.5s ease-out forwards;
+  }
+  @keyframes steamRise {
+    0%   { transform: scale(1);    opacity: 0.8; }
+    100% { transform: translateY(-280px) scale(4.5) translateX(15px); opacity: 0; }
+  }
+  .rain-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; display: none;
+    background: repeating-linear-gradient(170deg, transparent 0px, transparent 3px, rgba(150,180,255,0.06) 3px, rgba(150,180,255,0.06) 4px);
+    background-size: 8px 30px; animation: rainMove 0.25s linear infinite;
+  }
+  @keyframes rainMove { from { background-position: 0 0; } to { background-position: 8px 30px; } }
+</style>
+</head>
+<body>
+<div id="steam-overlay"></div>
+<div class="rain-overlay" id="rainOverlay"></div>
+<div class="world-info">
+  <div>ESCENARIO <span id="infoScene">—</span></div>
+  <div>CLIMA <span id="infoWeather">—</span></div>
+  <div>HORA <span id="infoTime">—</span></div>
+  <div>ESTACIÓN <span id="infoSeason">—</span></div>
+</div>
+<div class="controls-hint">
+  ↑ / W — Acelerar<br>↓ / S — Frenar<br>Espacio — Silbato
+</div>
+<div id="hud">
+  <div class="hud-block">
+    <div class="hud-label">Velocidad</div>
+    <div class="hud-value" id="speedVal">0</div>
+    <div class="hud-unit">km/h</div>
+  </div>
+  <div class="hud-block" style="align-self:center;">
+    <div class="hud-label">Acelerador</div>
+    <div class="throttle-track"><div class="throttle-fill" id="throttleFill" style="width:0%"></div></div>
+  </div>
+  <div class="hud-block" style="text-align:right;">
+    <div class="hud-label">Distancia</div>
+    <div class="hud-value" id="distVal">0</div>
+    <div class="hud-unit">km</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  RENDERER
+// ══════════════════════════════════════════════════════════════════
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+document.body.prepend(renderer.domElement);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 2000);
+window.addEventListener('resize', () => {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+// ══════════════════════════════════════════════════════════════════
+//  TRACK  (procedural, forward direction = +Z in world)
+// ══════════════════════════════════════════════════════════════════
+const SEG = 50, NSEGS = 130;
+const tPts = [], tTan = [];
+(function(){
+  let x=0, z=0, ang=0;
+  for(let i=0;i<NSEGS;i++){
+    ang += (Math.random()-0.5)*0.13;
+    const y = Math.sin(i*0.09)*4 + Math.sin(i*0.04)*8;
+    x += Math.sin(ang)*SEG; z -= Math.cos(ang)*SEG;
+    tPts.push(new THREE.Vector3(x,y,z));
+  }
+  for(let i=0;i<tPts.length-1;i++)
+    tTan.push(tPts[i+1].clone().sub(tPts[i]).normalize());
+})();
+
+let trkT = 4;
+function tPos(t){ const i=Math.min(Math.floor(t),tPts.length-2); return tPts[i].clone().lerp(tPts[i+1],t-Math.floor(t)); }
+function tDir(t){ return tTan[Math.min(Math.floor(t),tTan.length-1)].clone(); }
+
+// ══════════════════════════════════════════════════════════════════
+//  MATERIAL HELPER
+// ══════════════════════════════════════════════════════════════════
+function M(color, rough=0.75, metal=0){ return new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal}); }
+function ME(color, emissive, ei=1){ return new THREE.MeshStandardMaterial({color,roughness:0.1,metalness:0,emissive,emissiveIntensity:ei}); }
+
+// ══════════════════════════════════════════════════════════════════
+//  LOCOMOTIVE  — front faces +Z  (same as track travel direction)
+// ══════════════════════════════════════════════════════════════════
+const loco = new THREE.Group();
+
+// Underframe
+loco.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(2.6,0.5,9.5),M(0x111111,0.95,0.3)),{position:new THREE.Vector3(0,0.85,0),castShadow:true}));
+
+// Main boiler body — extends from z≈-1.5 (cab end) to z≈4.5 (front)
+const boilerM = M(0x242424,0.55,0.55);
+const boiler  = new THREE.Mesh(new THREE.CylinderGeometry(1.08,1.08,6.2,18), boilerM);
+boiler.rotation.x = Math.PI/2; boiler.position.set(0,2.08,1.4); boiler.castShadow=true;
+loco.add(boiler);
+
+// Boiler detail rings
+[0.2,1.5,2.8].forEach(dz=>{
+  const r=new THREE.Mesh(new THREE.CylinderGeometry(1.12,1.12,0.14,18),M(0x444444,0.4,0.75));
+  r.rotation.x=Math.PI/2; r.position.set(0,2.08,1.4+dz-1.4); loco.add(r);
+});
+
+// Smokebox (front cylinder cap)
+const sbx=new THREE.Mesh(new THREE.CylinderGeometry(1.12,1.12,1.0,18),M(0x0e0e0e,0.85,0.2));
+sbx.rotation.x=Math.PI/2; sbx.position.set(0,2.08,4.1); sbx.castShadow=true; loco.add(sbx);
+// front face disc
+const fd=new THREE.Mesh(new THREE.CircleGeometry(1.12,18),M(0x0e0e0e,0.9));
+fd.rotation.y=Math.PI; fd.position.set(0,2.08,4.62); loco.add(fd);
+
+// Chimney (over smokebox, front)
+const chB=new THREE.Mesh(new THREE.CylinderGeometry(0.31,0.42,1.15,12),M(0x0d0d0d,0.85,0.2));
+chB.position.set(0,3.76,3.85); chB.castShadow=true; loco.add(chB);
+const chT=new THREE.Mesh(new THREE.CylinderGeometry(0.48,0.31,0.4,12),M(0x080808,0.85));
+chT.position.set(0,4.65,3.85); loco.add(chT);
+
+// Steam dome (gold, over boiler mid)
+const sdome=new THREE.Mesh(new THREE.SphereGeometry(0.56,12,9),M(0x8a6820,0.3,0.85));
+sdome.position.set(0,3.16,1.5); loco.add(sdome);
+// Sand dome (smaller, forward)
+const ssdome=new THREE.Mesh(new THREE.SphereGeometry(0.34,10,7),M(0x2a2a2a,0.75,0.2));
+ssdome.position.set(0,3.0,2.8); loco.add(ssdome);
+
+// Cab body (rear, z = -4.0 to -1.0)
+const cab=new THREE.Mesh(new THREE.BoxGeometry(2.75,2.3,3.2),M(0x8b1a10,0.72,0.08));
+cab.position.set(0,3.1,-2.5); cab.castShadow=true; loco.add(cab);
+// Cab roof overhang
+const cabRoof=new THREE.Mesh(new THREE.BoxGeometry(3.05,0.24,3.5),M(0x580e08,0.75));
+cabRoof.position.set(0,4.36,-2.5); loco.add(cabRoof);
+// Cab back wall
+const cabBack=new THREE.Mesh(new THREE.BoxGeometry(2.75,2.3,0.18),M(0x6a1008,0.8));
+cabBack.position.set(0,3.1,-4.1); loco.add(cabBack);
+
+// Cab windows (front of cab)
+const winM=new THREE.MeshStandardMaterial({color:0x1a2d40,roughness:0.05,metalness:0,transparent:true,opacity:0.72});
+[-0.88,0.88].forEach(wx=>{
+  const w=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.75,1.15),winM);
+  w.position.set(wx,3.35,-1.05); loco.add(w);
+});
+// Cab side windows
+[-1.39,1.39].forEach(wx=>{
+  const w=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.65,1.05),winM);
+  w.position.set(wx,3.3,-2.5); loco.add(w);
+});
+
+// Headlight housing
+const hlH=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.32,0.32,10),M(0x888866,0.35,0.7));
+hlH.rotation.x=Math.PI/2; hlH.position.set(0,2.45,4.78); loco.add(hlH);
+const hlG=new THREE.Mesh(new THREE.CircleGeometry(0.21,10),ME(0xffffcc,0xffffee,2.5));
+hlG.position.set(0,2.45,4.95); loco.add(hlG);
+
+// Cow-catcher (front, z ≈ 5.0)
+const ccBase=new THREE.Mesh(new THREE.BoxGeometry(2.7,0.18,1.9),M(0x3a3a3a,0.8,0.4));
+ccBase.position.set(0,1.05,5.1); ccBase.rotation.x=0.32; loco.add(ccBase);
+for(let i=-3;i<=3;i++){
+  const bar=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.85,1.65),M(0x2a2a2a,0.8,0.3));
+  bar.position.set(i*0.37,0.7,5.0); bar.rotation.x=0.32; loco.add(bar);
+}
+
+// Handrails
+[-1.42,1.42].forEach(hx=>{
+  const hr=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,5.2,6),M(0xaa8830,0.25,0.85));
+  hr.rotation.x=Math.PI/2; hr.position.set(hx,2.55,1.5); loco.add(hr);
+  // stanchions
+  [-1.5,0,1.5].forEach(hz=>{
+    const st=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.7,6),M(0x888844,0.3,0.8));
+    st.position.set(hx,2.22,1.5+hz); loco.add(st);
+  });
+});
+
+// Side connecting rods
+[-1.43,1.43].forEach(rx=>{
+  const rod=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.13,3.4),M(0x999966,0.35,0.7));
+  rod.position.set(rx,1.18,0.5); loco.add(rod);
+});
+
+// ── Wheels  (all via helper)
+const allLocoWheels=[];
+function addWheel(x,y,z,r=0.82,isDrive=true){
+  const g=new THREE.Group();
+  // tyre
+  g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(r,r,0.26,20),M(0x111111,0.85,0.3)),{}));
+  // rim band
+  g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(r+0.045,r+0.045,0.1,20),M(0x888855,0.3,0.85)),{}));
+  // hub
+  g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.38,10),M(0x998844,0.25,0.9)),{}));
+  // spokes
+  const nSpokes = isDrive ? 10 : 8;
+  for(let s=0;s<nSpokes;s++){
+    const sp=new THREE.Mesh(new THREE.BoxGeometry(0.055,r*1.9,0.065),M(0x222211,0.55,0.45));
+    sp.rotation.z=(s/nSpokes)*Math.PI*2; g.add(sp);
+  }
+  g.rotation.z=Math.PI/2; g.position.set(x,y,z);
+  g.castShadow=true; loco.add(g);
+  if(isDrive) allLocoWheels.push(g);
+  return g;
+}
+// 3 large drive wheel pairs  (z = 2.8, 1.0, -0.7)
+addWheel(-1.44,1.18, 2.8); addWheel(1.44,1.18, 2.8);
+addWheel(-1.44,1.18, 1.0); addWheel(1.44,1.18, 1.0);
+addWheel(-1.44,1.18,-0.7); addWheel(1.44,1.18,-0.7);
+// pony wheels (front, small)
+addWheel(-1.44,0.78,4.25,0.52,false); addWheel(1.44,0.78,4.25,0.52,false);
+// trailing wheels (rear under cab)
+addWheel(-1.44,0.68,-3.55,0.46,false); addWheel(1.44,0.68,-3.55,0.46,false);
+
+// Headlight point light
+const hLight=new THREE.PointLight(0xffffaa,1.5,40);
+hLight.position.set(0,2.4,6.5); loco.add(hLight);
+
+scene.add(loco);
+
+// ══════════════════════════════════════════════════════════════════
+//  WAGONS  (3 passenger cars, positioned on track)
+// ══════════════════════════════════════════════════════════════════
+const WAGON_COLS=[0x7a3010,0x2a4a6a,0x3a5a28];
+const wagons=[], wWheels=[];
+
+function makeWagon(col){
+  const g=new THREE.Group();
+  // body
+  const body=new THREE.Mesh(new THREE.BoxGeometry(2.7,2.05,8.0),M(col,0.75,0.06));
+  body.position.set(0,2.52,0); body.castShadow=true; body.receiveShadow=true; g.add(body);
+  // roof
+  g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(2.82,0.26,8.2),M(0x1a1a1a,0.82)),{position:new THREE.Vector3(0,3.68,0)}));
+  // underframe
+  g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(2.6,0.42,8.2),M(0x111111,0.92,0.3)),{position:new THREE.Vector3(0,1.38,0)}));
+  // decorative gold stripe
+  g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(2.72,0.16,8.02),M(0xaa8820,0.4,0.7)),{position:new THREE.Vector3(0,1.88,0)}));
+  // windows
+  const wM=new THREE.MeshStandardMaterial({color:0x2a4a62,roughness:0.05,transparent:true,opacity:0.68});
+  for(let wz=-2.6;wz<=2.6;wz+=1.5){
+    [-1.37,1.37].forEach(wx=>{
+      const w=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.72,0.92),wM);
+      w.position.set(wx,2.65,wz); g.add(w);
+    });
+  }
+  // end doors
+  [-4.05,4.05].forEach(ez=>{
+    g.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(1.4,1.5,0.1),M(0x1a1a1a,0.85)),{position:new THREE.Vector3(0,2.2,ez)}));
+    // coupler
+    const cp=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.3,0.55),M(0x3a3a3a,0.7,0.6));
+    cp.position.set(0,1.48,ez+(ez>0?0.35:-0.35)); g.add(cp);
+    const pin=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.55,7),M(0x2a2a2a,0.7,0.5));
+    pin.rotation.x=Math.PI/2; pin.position.set(0,1.48,ez+(ez>0?0.65:-0.65)); g.add(pin);
+  });
+  // bogie wheels
+  const ww=[];
+  [-2.6,2.6].forEach(bz=>{
+    [-0.8,0.8].forEach(az=>{
+      [-1.44,1.44].forEach(wx=>{
+        const wg=new THREE.Group();
+        wg.add(new THREE.Mesh(new THREE.CylinderGeometry(0.46,0.46,0.22,14),M(0x111111,0.85,0.3)));
+        wg.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,0.08,14),M(0x555544,0.35,0.75)),{}));
+        wg.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.3,8),M(0x887744,0.3,0.8)),{}));
+        for(let s=0;s<7;s++){
+          const sp=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.84,0.05),M(0x222211,0.55,0.45));
+          sp.rotation.z=(s/7)*Math.PI*2; wg.add(sp);
+        }
+        wg.rotation.z=Math.PI/2; wg.position.set(wx,0.78,bz+az);
+        g.add(wg); ww.push(wg);
+      });
+    });
+  });
+  wWheels.push(ww);
+  scene.add(g);
+  wagons.push(g);
+  return g;
+}
+makeWagon(WAGON_COLS[0]);
+makeWagon(WAGON_COLS[1]);
+makeWagon(WAGON_COLS[2]);
+
+// ══════════════════════════════════════════════════════════════════
+//  RAILS & TIES
+// ══════════════════════════════════════════════════════════════════
+const railMat = new THREE.MeshStandardMaterial({color:0x9a9a88,roughness:0.25,metalness:0.85});
+const tieMat  = new THREE.MeshStandardMaterial({color:0x483010,roughness:0.95});
+const vRails=[];
+for(let i=0;i<72;i++){
+  const lr=new THREE.Mesh(new THREE.BoxGeometry(0.13,0.16,SEG),railMat);
+  const rr=new THREE.Mesh(new THREE.BoxGeometry(0.13,0.16,SEG),railMat);
+  const tie=new THREE.Mesh(new THREE.BoxGeometry(3.3,0.18,0.72),tieMat);
+  scene.add(lr,rr,tie); vRails.push({lr,rr,tie});
+}
+function updateRails(){
+  for(let i=0;i<vRails.length;i++){
+    const ti=trkT-9+i*0.42;
+    if(ti<0||ti>=tPts.length-1){vRails[i].lr.visible=vRails[i].rr.visible=vRails[i].tie.visible=false;continue;}
+    const p=tPos(ti), d=tDir(ti);
+    const right=new THREE.Vector3().crossVectors(d,new THREE.Vector3(0,1,0)).normalize();
+    const ay=Math.atan2(d.x,d.z);
+    const {lr,rr,tie}=vRails[i];
+    lr.position.copy(p).addScaledVector(right, 1.06); lr.position.y+=0.14; lr.rotation.y=ay;
+    rr.position.copy(p).addScaledVector(right,-1.06); rr.position.y+=0.14; rr.rotation.y=ay;
+    tie.position.copy(p); tie.position.y+=0.07; tie.rotation.y=ay;
+    lr.visible=rr.visible=tie.visible=true;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  LIGHTS
+// ══════════════════════════════════════════════════════════════════
+scene.fog=new THREE.Fog(0x87ceeb,80,430);
+const ambient=new THREE.AmbientLight(0xffffff,0.5); scene.add(ambient);
+const hemi=new THREE.HemisphereLight(0x88bbee,0x3a5a20,0.4); scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff8e0,1.3);
+sun.position.set(60,90,-40); sun.castShadow=true;
+sun.shadow.mapSize.width=sun.shadow.mapSize.height=2048;
+sun.shadow.camera.near=1; sun.shadow.camera.far=500;
+sun.shadow.camera.left=sun.shadow.camera.bottom=-130;
+sun.shadow.camera.right=sun.shadow.camera.top=130;
+sun.shadow.bias=-0.001; scene.add(sun);
+
+// ══════════════════════════════════════════════════════════════════
+//  GROUND & TERRAIN
+// ══════════════════════════════════════════════════════════════════
+const groundMat=new THREE.MeshStandardMaterial({color:0x4a8a3a,roughness:0.95});
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(900,900,60,60),groundMat);
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+
+// Mountains
+const mtns=[];
+for(let i=0;i<32;i++){
+  const side=i%2===0?1:-1, h=38+Math.random()*68, segs=Math.floor(6+Math.random()*4);
+  const m=new THREE.Mesh(new THREE.ConeGeometry(h*0.82+Math.random()*12,h,segs),new THREE.MeshStandardMaterial({color:0x6a7d8e,roughness:0.9}));
+  m.position.set(side*(95+Math.random()*130),h/2-2,-120+i*26+Math.random()*18);
+  m.rotation.y=Math.random()*Math.PI; m.castShadow=true; scene.add(m); mtns.push(m);
+  // snow cap
+  const cap=new THREE.Mesh(new THREE.ConeGeometry(h*0.26,h*0.3,segs),new THREE.MeshStandardMaterial({color:0xeef4f8,roughness:0.85}));
+  cap.position.copy(m.position); cap.position.y+=h*0.36; scene.add(cap);
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  VEGETATION POOLS
+// ══════════════════════════════════════════════════════════════════
+const treePools=[], bushPool=[], rockPool=[];
+
+function mkTree(c1,c2){
+  const g=new THREE.Group();
+  g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.36,3.0,8),new THREE.MeshStandardMaterial({color:0x5a3010,roughness:0.95})),{position:new THREE.Vector3(0,1.5,0),castShadow:true}));
+  [[3.2,4.5,3.4],[2.5,3.4,5.8],[1.5,2.4,7.4]].forEach(([r,h,y])=>{
+    const cone=new THREE.Mesh(new THREE.ConeGeometry(r,h,9),new THREE.MeshStandardMaterial({color:c1,roughness:0.85}));
+    cone.position.y=y; cone.castShadow=true; g.add(cone);
+  });
+  const top=new THREE.Mesh(new THREE.ConeGeometry(1.5,2.6,9),new THREE.MeshStandardMaterial({color:c2,roughness:0.85}));
+  top.position.y=8.0; top.castShadow=true; g.add(top);
+  g.visible=false; scene.add(g); return g;
+}
+for(let i=0;i<160;i++) treePools.push({mesh:mkTree(0x2d7a2d,0x1a4d1a),active:false});
+for(let i=0;i<90;i++){
+  const g=new THREE.Group();
+  for(let b=0;b<5;b++){
+    const bm=new THREE.Mesh(new THREE.SphereGeometry(0.5+Math.random()*0.55,7,5),new THREE.MeshStandardMaterial({color:0x2d6a20,roughness:0.9}));
+    bm.position.set((Math.random()-0.5)*1.4,0.45+Math.random()*0.25,(Math.random()-0.5)*1.4);
+    bm.castShadow=true; g.add(bm);
+  }
+  g.visible=false; scene.add(g); bushPool.push({mesh:g,active:false});
+}
+for(let i=0;i<50;i++){
+  const s=0.4+Math.random()*1.8;
+  const r=new THREE.Mesh(new THREE.DodecahedronGeometry(s,0),new THREE.MeshStandardMaterial({color:0x7a7a6a,roughness:0.95,metalness:0.05}));
+  r.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+  r.castShadow=true; r.visible=false; scene.add(r); rockPool.push({mesh:r,active:false});
+}
+
+// Clouds
+const cloudObjs=[];
+for(let i=0;i<18;i++){
+  const g=new THREE.Group();
+  for(let c=0;c<6+Math.floor(Math.random()*5);c++){
+    const s=5+Math.random()*10;
+    const cm=new THREE.Mesh(new THREE.SphereGeometry(s,9,7),new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:0.88}));
+    cm.position.set((Math.random()-0.5)*24,(Math.random()-0.5)*5,(Math.random()-0.5)*16); g.add(cm);
+  }
+  g.position.set((Math.random()-0.5)*360,56+Math.random()*30,(Math.random()-0.5)*260);
+  scene.add(g); cloudObjs.push({mesh:g,spd:1.8+Math.random()*2.8});
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  RAIN
+// ══════════════════════════════════════════════════════════════════
+const RCNT=1500;
+const rPos=new Float32Array(RCNT*3);
+for(let i=0;i<RCNT;i++){rPos[i*3]=(Math.random()-0.5)*190;rPos[i*3+1]=Math.random()*85;rPos[i*3+2]=(Math.random()-0.5)*190;}
+const rGeo=new THREE.BufferGeometry(); rGeo.setAttribute('position',new THREE.BufferAttribute(rPos,3));
+const rain=new THREE.Points(rGeo,new THREE.PointsMaterial({color:0x99bbdd,size:0.19,transparent:true,opacity:0.55}));
+rain.visible=false; scene.add(rain);
+
+// ══════════════════════════════════════════════════════════════════
+//  BIOME PALETTES & CYCLING
+// ══════════════════════════════════════════════════════════════════
+const BPAL={
+  valley:  {ground:0x4a8a3a,tree1:0x2d7a2d,tree2:0x1a4d1a,mtn:0x6a7d8e},
+  mountain:{ground:0x6a7a5a,tree1:0x3a6a3a,tree2:0x1d3d1d,mtn:0x8a9aaa},
+  desert:  {ground:0xc0923a,tree1:0x5a8020,tree2:0x2d5010,mtn:0xaa8850},
+  tundra:  {ground:0xd4e0e8,tree1:0x4a6a4a,tree2:0x2a3a2a,mtn:0xb8c8d8},
+  europe:  {ground:0x3a7a2a,tree1:0x256025,tree2:0x153515,mtn:0x506070},
+};
+const BIOMES=['valley','mountain','desert','tundra','europe'];
+const WEATHERS=['sun','fog','rain','storm'];
+const SEASONS=['spring','summer','autumn','winter'];
+const SLABELS={spring:'PRIMAVERA',summer:'VERANO',autumn:'OTOÑO',winter:'INVIERNO'};
+let biomeI=0,weatherI=0,seasonI=0;
+let btmr=0,wtmr=0,stmr=0;
+let nxtB=90,nxtW=55,nxtS=230;
+let curPal={...BPAL.valley}, tgtPal={...BPAL.valley}, palT=1;
+
+function lerpHex(a,b,t){ return new THREE.Color(a).lerp(new THREE.Color(b),t).getHex(); }
+
+// ══════════════════════════════════════════════════════════════════
+//  TIME OF DAY
+// ══════════════════════════════════════════════════════════════════
+function skyCol(h){
+  if(h<5)   return new THREE.Color(0x070718);
+  if(h<6.5) return new THREE.Color(0x070718).lerp(new THREE.Color(0xe05015),(h-5)/1.5);
+  if(h<8)   return new THREE.Color(0xe05015).lerp(new THREE.Color(0x4e9ed4),(h-6.5)/1.5);
+  if(h<17)  return new THREE.Color(0x4e9ed4);
+  if(h<18.5)return new THREE.Color(0x4e9ed4).lerp(new THREE.Color(0xe06010),(h-17)/1.5);
+  if(h<20)  return new THREE.Color(0xe06010).lerp(new THREE.Color(0x1a0828),(h-18.5)/1.5);
+  return new THREE.Color(0x070718);
+}
+function sunInt(h){ if(h<5||h>21)return 0.04; if(h<7)return 0.04+(h-5)/2*0.9; if(h<17)return 1.3; return Math.max(0.04,1.3-(h-17)/4*1.3); }
+function sunCol(h){ return (h<7||h>19)?new THREE.Color(0xff7733):new THREE.Color(0xfff8e0); }
+function tLabel(h){ if(h<5)return'NOCHE';if(h<7)return'AMANECER';if(h<17)return'DÍA';if(h<19)return'ATARDECER';return'NOCHE'; }
+
+// ══════════════════════════════════════════════════════════════════
+//  VEGETATION SPAWN
+// ══════════════════════════════════════════════════════════════════
+let tI=0,bI=0,rI=0,lastVZ=-9999;
+function spawnVeg(pos){
+  if(Math.abs(pos.z-lastVZ)<11)return; lastVZ=pos.z;
+  const p=BPAL[BIOMES[biomeI]];
+  for(let n=0;n<2+Math.floor(Math.random()*3);n++){
+    const t=treePools[tI++%treePools.length];
+    // update foliage colors
+    t.mesh.children.forEach((c,i)=>{ if(c.material&&i>0&&i<4)c.material.color.setHex(p.tree1); if(c.material&&i===4)c.material.color.setHex(p.tree2); });
+    const side=Math.random()>0.5?1:-1;
+    t.mesh.position.set(pos.x+side*(15+Math.random()*65),pos.y,pos.z+(Math.random()-0.5)*45);
+    t.mesh.rotation.y=Math.random()*Math.PI*2;
+    t.mesh.scale.setScalar(0.65+Math.random()*0.75);
+    t.mesh.visible=true;
+  }
+  if(Math.random()>0.4){ const b=bushPool[bI++%bushPool.length]; const s=Math.random()>0.5?1:-1; b.mesh.position.set(pos.x+s*(10+Math.random()*24),pos.y,pos.z+(Math.random()-0.5)*28); b.mesh.visible=true; }
+  if(Math.random()>0.6){ const r=rockPool[rI++%rockPool.length]; const s=Math.random()>0.5?1:-1; r.mesh.position.set(pos.x+s*(7+Math.random()*38),pos.y+0.4,pos.z+(Math.random()-0.5)*32); r.mesh.visible=true; }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  CONTROLS
+// ══════════════════════════════════════════════════════════════════
+const keys={};
+window.addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space')whistle();});
+window.addEventListener('keyup',e=>{keys[e.code]=false;});
+
+let actx=null;
+function whistle(){
+  try{
+    if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
+    [880,1109,1320].forEach((f,i)=>{
+      const o=actx.createOscillator(), g=actx.createGain();
+      o.connect(g);g.connect(actx.destination);
+      o.type='sawtooth'; o.frequency.value=f;
+      g.gain.setValueAtTime(0,actx.currentTime+i*0.06);
+      g.gain.linearRampToValueAtTime(0.07,actx.currentTime+i*0.06+0.06);
+      g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.75);
+      o.start(actx.currentTime+i*0.06); o.stop(actx.currentTime+0.9);
+    });
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  STEAM PUFFS
+// ══════════════════════════════════════════════════════════════════
+let stmTmr=0;
+function puff(){
+  const el=document.getElementById('steam-overlay');
+  const s=28+Math.random()*38;
+  const px=window.innerWidth*0.45+(Math.random()-0.5)*55;
+  const py=window.innerHeight*0.26+(Math.random()-0.5)*28;
+  const d=document.createElement('div');
+  d.className='steam-puff';
+  Object.assign(d.style,{width:s+'px',height:s+'px',left:px+'px',top:py+'px'});
+  el.appendChild(d); setTimeout(()=>d.remove(),3600);
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  WORLD STATE
+// ══════════════════════════════════════════════════════════════════
+const W={speed:0,throttle:0,maxSpeed:90,distance:0,time:8.5,timeSpd:0.0028};
+
+// ══════════════════════════════════════════════════════════════════
+//  MAIN LOOP
+// ══════════════════════════════════════════════════════════════════
+const clock=new THREE.Clock();
+let frame=0;
+let camPos=new THREE.Vector3(0,12,30);
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.05);
+  frame++;
+
+  // ── INPUT & PHYSICS  (heavy steam locomotive — very slow to accelerate)
+  if(keys['ArrowUp']||keys['KeyW'])      W.throttle=Math.min(1,W.throttle+dt*0.15);  // ~6.5s to full throttle
+  else if(keys['ArrowDown']||keys['KeyS'])W.throttle=Math.max(0,W.throttle-dt*0.25); // brakes
+  else                                    W.throttle=Math.max(0,W.throttle-dt*0.04);  // coasting decay
+
+  // Speed: inertia factor scales with mass
+  const tgt=W.throttle*W.maxSpeed;
+  const accelRate = W.speed<tgt ? 4.5 : 14; // slow up, faster down
+  W.speed+=(tgt-W.speed)*Math.min(1,dt*accelRate/W.maxSpeed*2.5);
+  if(W.speed<0.05)W.speed=0;
+
+  // ── ADVANCE
+  trkT=Math.min(trkT+(W.speed/3.6/SEG)*dt*SEG,tPts.length-2);
+  W.distance+=W.speed*dt/3600;
+
+  // ── LOCO POSITION ON TRACK
+  const lpos=tPos(trkT), ldir=tDir(trkT);
+  const lang=Math.atan2(ldir.x,ldir.z);
+  loco.position.copy(lpos); loco.position.y+=1.15; loco.rotation.y=lang;
+
+  // ── WAGONS  — each spaced ~10 units behind on track
+  const WGAP=10.5/SEG;
+  wagons.forEach((wg,idx)=>{
+    const wt=Math.max(0,trkT-(idx+1)*WGAP*SEG/SEG);
+    const wp=tPos(wt), wd=tDir(wt);
+    wg.position.copy(wp); wg.position.y+=1.15; wg.rotation.y=Math.atan2(wd.x,wd.z);
+  });
+
+  // ── WHEEL ROTATION
+  const wr=(W.speed/3.6)*dt/0.82;
+  allLocoWheels.forEach(w=>w.rotation.x+=wr);
+  wWheels.forEach(ww=>ww.forEach(w=>w.rotation.x+=wr*0.58));
+
+  // ── CAMERA — behind & above loco, looking forward
+  const behind=ldir.clone().negate().multiplyScalar(30);
+  const camTgt=lpos.clone().add(behind).add(new THREE.Vector3(0,12,0));
+  camPos.lerp(camTgt,dt*4.0);
+  camera.position.copy(camPos);
+  camera.lookAt(lpos.clone().addScaledVector(ldir,14).add(new THREE.Vector3(0,3.5,0)));
+
+  // ── RAILS
+  if(frame%2===0)updateRails();
+
+  // ── VEG
+  spawnVeg(lpos);
+
+  // ── GROUND & MOUNTAINS
+  ground.position.x=lpos.x; ground.position.z=lpos.z;
+  mtns.forEach(m=>{ if(Math.abs(m.position.z-lpos.z)>360)m.position.z=lpos.z+(Math.random()-0.5)*420; });
+
+  // ── CLOUDS
+  cloudObjs.forEach(c=>{ c.mesh.position.x+=dt*c.spd; if(c.mesh.position.x-lpos.x>290){c.mesh.position.x=lpos.x-230;c.mesh.position.z=lpos.z+(Math.random()-0.5)*240;} });
+
+  // ── TIME OF DAY
+  W.time=(W.time+dt*W.timeSpd*24)%24;
+  const sky=skyCol(W.time);
+  scene.background=sky; scene.fog.color.copy(sky);
+  sun.intensity=sunInt(W.time); sun.color.copy(sunCol(W.time));
+  ambient.intensity=0.12+sunInt(W.time)*0.4;
+  hemi.intensity=0.08+sunInt(W.time)*0.28;
+  hLight.intensity=(W.time<7||W.time>19)?4.5:0.5;
+  const sa=((W.time-6)/12)*Math.PI;
+  sun.position.set(Math.cos(sa)*110,Math.sin(sa)*85,-55);
+
+  // ── BIOME
+  btmr+=dt*(0.35+W.speed*0.02);
+  if(btmr>nxtB){btmr=0;nxtB=85+Math.random()*65;biomeI=(biomeI+1)%BIOMES.length;tgtPal={...BPAL[BIOMES[biomeI]]};palT=0;}
+  if(palT<1){palT=Math.min(1,palT+dt*0.22);for(const k in curPal)curPal[k]=lerpHex(curPal[k],tgtPal[k],palT);groundMat.color.setHex(curPal.ground);mtns.forEach(m=>m.material.color.setHex(curPal.mtn));}
+
+  // ── WEATHER
+  wtmr+=dt*0.36;
+  if(wtmr>nxtW){wtmr=0;nxtW=48+Math.random()*58;weatherI=(weatherI+1)%WEATHERS.length;}
+  const wea=WEATHERS[weatherI];
+  const isR=wea==='rain'||wea==='storm', isF=wea==='fog', isS=wea==='storm';
+  rain.visible=isR;
+  document.getElementById('rainOverlay').style.display=isR?'block':'none';
+  scene.fog.near=isF?15:isR?32:80; scene.fog.far=isF?65:isR?135:430;
+  if(isR){const rp=rain.geometry.attributes.position.array;for(let i=0;i<RCNT;i++){rp[i*3+1]-=34*dt;if(rp[i*3+1]<-2){rp[i*3]=lpos.x+(Math.random()-0.5)*160;rp[i*3+1]=78;rp[i*3+2]=lpos.z+(Math.random()-0.5)*160;}}rain.geometry.attributes.position.needsUpdate=true;}
+  if(isS){scene.background=new THREE.Color(0x26293a);ambient.intensity=0.08;}
+
+  // ── SEASON
+  stmr+=dt*0.07;
+  if(stmr>nxtS){stmr=0;nxtS=185+Math.random()*130;seasonI=(seasonI+1)%SEASONS.length;}
+  const seas=SEASONS[seasonI];
+  if(seas==='winter')groundMat.color.setHex(0xc8d8e2);
+  if(seas==='autumn')treePools.forEach(t=>{if(t.mesh.visible)t.mesh.children.forEach((c,i)=>{if(c.material&&i>0&&i<4)c.material.color.setHex([0xc03010,0xd05010,0xc04808][i%3]);});});
+
+  // ── STEAM
+  stmTmr+=dt;
+  const pr=Math.max(0.22,0.85-W.throttle*0.62);
+  if(stmTmr>pr&&W.speed>0.5){stmTmr=0;puff();}
+
+  // ── HUD
+  document.getElementById('speedVal').textContent=Math.round(W.speed);
+  document.getElementById('distVal').textContent=W.distance.toFixed(1);
+  document.getElementById('throttleFill').style.width=(W.throttle*100)+'%';
+  document.getElementById('infoScene').textContent=BIOMES[biomeI].toUpperCase();
+  document.getElementById('infoWeather').textContent=wea.toUpperCase();
+  document.getElementById('infoTime').textContent=tLabel(W.time)+' '+String(Math.floor(W.time)%24).padStart(2,'0')+':'+String(Math.floor((W.time%1)*60)).padStart(2,'0');
+  document.getElementById('infoSeason').textContent=SLABELS[seas];
+
+  renderer.render(scene,camera);
+}
+animate();
+</script>
+</body>
+</html>

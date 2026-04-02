@@ -36,7 +36,7 @@ export default function Apps() {
           <div className="border-2 border-dashed border-[var(--border-dark)] rounded-2xl p-16 text-center">
             <p className="text-4xl mb-4">🚀</p>
             <p className="font-mono text-[var(--text-muted)] text-sm mb-2">
-              // Próximamente...
+              Próximamente...
             </p>
             <p className="font-mono text-xs text-[var(--text-muted)] opacity-60">
               Agregá apps en{' '}
@@ -72,7 +72,7 @@ export default function Apps() {
                           href={app.repo}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
+                          // onClick={(e) => e.stopPropagation()}
                           className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                           aria-label="GitHub repo"
                         >
@@ -84,7 +84,7 @@ export default function Apps() {
                           href={app.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
+                          // onClick={(e) => e.stopPropagation()}
                           className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                           aria-label="Open app"
                         >

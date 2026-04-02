@@ -11,7 +11,7 @@ const statusStyles: Record<AppStatus, { label: string; dot: string; className: s
 
 export default function AppsPage() {
   const internalApps = apps.filter((a) => a.internal)
-
+console.log("INTERNALS",internalApps)
   return (
     <div className="max-w-4xl mx-auto px-6 py-16">
       <div className="mb-12">

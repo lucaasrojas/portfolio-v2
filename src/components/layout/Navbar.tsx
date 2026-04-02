@@ -64,7 +64,7 @@ export default function Navbar() {
         {/* Mobile toggle */}
         <button
           className="md:hidden text-[var(--text-primary)]"
-          onClick={() => setOpen(!open)}
+          // onClick={() => setOpen(!open)}
           aria-label="Toggle menu"
         >
           {open ? <X size={20} /> : <Menu size={20} />}
