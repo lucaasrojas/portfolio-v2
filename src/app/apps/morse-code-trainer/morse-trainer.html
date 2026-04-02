@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MORSE TRAINER — Código Internacional</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Teko:wght@300;400;600&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --amber: #e8a020;
+    --amber-dim: #7a4d08;
+    --amber-glow: #ffd060;
+    --amber-faint: #3a2005;
+    --bg: #0a0804;
+    --bg2: #110d06;
+    --bg3: #1a1208;
+    --green-ok: #4ecb71;
+    --red-err: #e05252;
+    --dot-color: #ffd060;
+    --dash-color: #e8a020;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--amber);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  /* Scanlines */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.15) 2px,
+      rgba(0,0,0,0.15) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  /* Vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+    z-index: 99;
+  }
+
+  /* Noise texture */
+  .noise {
+    position: fixed;
+    inset: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 680px;
+    padding: 20px;
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    border-bottom: 1px solid var(--amber-dim);
+    padding-bottom: 12px;
+  }
+
+  .header h1 {
+    font-family: 'Teko', sans-serif;
+    font-size: 2.4rem;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    color: var(--amber-glow);
+    text-shadow: 0 0 20px var(--amber), 0 0 40px rgba(232,160,32,0.3);
+    line-height: 1;
+  }
+
+  .header .subtitle {
+    font-size: 0.65rem;
+    letter-spacing: 0.5em;
+    color: var(--amber-dim);
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  /* Stats bar */
+  .stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--amber-dim);
+    padding: 6px 0;
+  }
+
+  .stats span { display: flex; align-items: center; gap: 6px; }
+  .stats .val { color: var(--amber); font-size: 0.85rem; }
+
+  /* Progress bar */
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.65rem;
+    color: var(--amber-dim);
+    letter-spacing: 0.1em;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--amber-faint);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--amber);
+    box-shadow: 0 0 8px var(--amber);
+    transition: width 0.5s ease;
+  }
+
+  /* Main display */
+  .screen {
+    background: var(--bg2);
+    border: 1px solid var(--amber-dim);
+    padding: 28px 20px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 0 30px rgba(232,160,32,0.05), inset 0 0 20px rgba(0,0,0,0.3);
+  }
+
+  .screen::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--amber-dim), transparent);
+  }
+
+  .letter-display {
+    font-family: 'Teko', sans-serif;
+    font-size: 7rem;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--amber-glow);
+    text-shadow: 0 0 30px var(--amber), 0 0 60px rgba(232,160,32,0.2);
+    transition: all 0.2s;
+    min-height: 7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .letter-display.flash-ok { color: var(--green-ok); text-shadow: 0 0 30px var(--green-ok); }
+  .letter-display.flash-err { color: var(--red-err); text-shadow: 0 0 30px var(--red-err); }
+
+  .morse-reference {
+    font-size: 1.6rem;
+    letter-spacing: 0.3em;
+    color: var(--amber-dim);
+    margin-top: 4px;
+    min-height: 2rem;
+    transition: color 0.3s;
+  }
+
+  .morse-reference .dot { color: var(--dot-color); }
+  .morse-reference .dash { color: var(--dash-color); }
+
+  /* Input display */
+  .input-display {
+    margin-top: 16px;
+    min-height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .input-symbol {
+    font-size: 1.8rem;
+    animation: symbolIn 0.1s ease;
+  }
+
+  .input-symbol.dot { color: var(--dot-color); text-shadow: 0 0 10px var(--dot-color); }
+  .input-symbol.dash { color: var(--dash-color); text-shadow: 0 0 10px var(--dash-color); }
+
+  @keyframes symbolIn {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /* Timeout bar */
+  .timeout-bar {
+    height: 2px;
+    background: var(--amber-faint);
+    margin-top: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .timeout-fill {
+    height: 100%;
+    background: var(--amber);
+    box-shadow: 0 0 6px var(--amber);
+    transition: width linear;
+  }
+
+  /* Hint panel */
+  .hint-panel {
+    background: var(--bg3);
+    border: 1px solid #5a2020;
+    padding: 14px 18px;
+    display: none;
+    gap: 10px;
+    flex-direction: column;
+    animation: hintIn 0.3s ease;
+  }
+
+  .hint-panel.visible { display: flex; }
+
+  @keyframes hintIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hint-title {
+    font-size: 0.6rem;
+    letter-spacing: 0.4em;
+    color: var(--red-err);
+    text-transform: uppercase;
+  }
+
+  .hint-body {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .hint-letter-big {
+    font-family: 'Teko', sans-serif;
+    font-size: 3rem;
+    color: var(--red-err);
+    text-shadow: 0 0 15px var(--red-err);
+    line-height: 1;
+  }
+
+  .hint-morse {
+    font-size: 1.4rem;
+    letter-spacing: 0.25em;
+  }
+  .hint-morse .dot { color: var(--dot-color); }
+  .hint-morse .dash { color: var(--dash-color); }
+
+  .hint-mnemonic {
+    font-family: 'Special Elite', serif;
+    font-size: 0.8rem;
+    color: var(--amber-dim);
+    line-height: 1.5;
+    border-left: 2px solid var(--amber-faint);
+    padding-left: 12px;
+    flex: 1;
+    min-width: 180px;
+  }
+
+  .hint-mnemonic strong { color: var(--amber); }
+
+  /* Buttons */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .btn {
+    background: var(--bg2);
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    padding: 18px;
+    cursor: pointer;
+    text-transform: uppercase;
+    position: relative;
+    transition: all 0.1s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .btn:hover { border-color: var(--amber); background: var(--amber-faint); }
+
+  .btn.active {
+    background: var(--amber-faint);
+    border-color: var(--amber-glow);
+    box-shadow: 0 0 15px rgba(232,160,32,0.2), inset 0 0 10px rgba(232,160,32,0.05);
+  }
+
+  .btn .symbol {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .btn-dot .symbol { color: var(--dot-color); text-shadow: 0 0 10px var(--dot-color); }
+  .btn-dash .symbol { color: var(--dash-color); text-shadow: 0 0 10px var(--dash-color); }
+
+  .btn .key-hint {
+    font-size: 0.55rem;
+    color: var(--amber-dim);
+    letter-spacing: 0.3em;
+  }
+
+  /* Submit / Skip */
+  .action-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .btn-action {
+    background: transparent;
+    border: 1px solid var(--amber-dim);
+    color: var(--amber-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    padding: 10px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .btn-action:hover { border-color: var(--amber); color: var(--amber); }
+  .btn-submit { border-color: var(--amber); color: var(--amber); }
+  .btn-submit:hover { background: var(--amber-faint); box-shadow: 0 0 15px rgba(232,160,32,0.2); }
+
+  /* Alphabet reference toggle */
+  .ref-toggle {
+    text-align: center;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    color: var(--amber-dim);
+    cursor: pointer;
+    padding: 4px;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .ref-toggle:hover { color: var(--amber); }
+
+  /* Alphabet table */
+  .alphabet-ref {
+    background: var(--bg2);
+    border: 1px solid var(--amber-faint);
+    padding: 12px;
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    max-height: 140px;
+    overflow-y: auto;
+  }
+
+  .alphabet-ref.visible { display: flex; }
+
+  .alpha-item {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    font-size: 0.65rem;
+    padding: 3px 6px;
+    border: 1px solid var(--amber-faint);
+    background: var(--bg);
+  }
+
+  .alpha-item .al { color: var(--amber-glow); font-weight: bold; }
+  .alpha-item .am { color: var(--amber-dim); letter-spacing: 0.1em; }
+  .alpha-item.active-ref { border-color: var(--amber-dim); }
+
+  /* Status message */
+  .status-msg {
+    text-align: center;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    min-height: 1.2rem;
+    color: var(--amber-dim);
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  .status-msg.ok { color: var(--green-ok); }
+  .status-msg.err { color: var(--red-err); }
+
+  /* Learned letters */
+  .learned-row {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+    min-height: 24px;
+  }
+
+  .learned-badge {
+    font-family: 'Teko', sans-serif;
+    font-size: 1rem;
+    color: var(--green-ok);
+    text-shadow: 0 0 8px var(--green-ok);
+    opacity: 0.6;
+    transition: opacity 0.3s;
+  }
+  .learned-badge.current { opacity: 1; font-size: 1.2rem; }
+
+  /* Responsive */
+  @media (max-width: 480px) {
+    .letter-display { font-size: 5rem; }
+    .header h1 { font-size: 1.8rem; }
+    .btn { padding: 14px; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--amber-dim); }
+</style>
+</head>
+<body>
+<div class="noise"></div>
+
+<div class="container">
+
+  <div class="header">
+    <h1>▬ MORSE TRAINER ▬</h1>
+    <div class="subtitle">Código Morse Internacional · Entrenador de Telegrafía</div>
+  </div>
+
+  <div class="stats">
+    <span>CORRECTAS: <span class="val" id="correct">0</span></span>
+    <span>RACHA: <span class="val" id="streak">0</span></span>
+    <span>LETRAS: <span class="val" id="learned-count">1</span>/26</span>
+    <span>ERRORES: <span class="val" id="errors">0</span></span>
+  </div>
+
+  <div class="progress-row">
+    <span>PROGRESO</span>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:4%"></div></div>
+    <span id="progress-label">1/26</span>
+  </div>
+
+  <div class="screen">
+    <div class="letter-display" id="letter-display">·</div>
+    <div class="morse-reference" id="morse-ref"></div>
+    <div class="input-display" id="input-display"></div>
+    <div class="timeout-bar"><div class="timeout-fill" id="timeout-fill" style="width:100%"></div></div>
+  </div>
+
+  <div class="hint-panel" id="hint-panel">
+    <div class="hint-title">▸ AYUDA — Respuesta incorrecta</div>
+    <div class="hint-body">
+      <div class="hint-letter-big" id="hint-letter">A</div>
+      <div class="hint-morse" id="hint-morse"></div>
+      <div class="hint-mnemonic" id="hint-mnemonic"></div>
+    </div>
+  </div>
+
+  <div class="status-msg" id="status-msg">INICIANDO TRANSMISIÓN...</div>
+
+  <div class="controls">
+    <button class="btn btn-dot" id="btn-dot" onmousedown="pressSymbol('.')" ontouchstart="e(event,'.')" ontouchend="preventDef(event)">
+      <span class="symbol">•</span>
+      <span>PUNTO</span>
+      <span class="key-hint">TECLA ← / F / J</span>
+    </button>
+    <button class="btn btn-dash" id="btn-dash" onmousedown="pressSymbol('-')" ontouchstart="e(event,'-')" ontouchend="preventDef(event)">
+      <span class="symbol">▬</span>
+      <span>RAYA</span>
+      <span class="key-hint">TECLA → / D / K</span>
+    </button>
+  </div>
+
+  <div class="action-row">
+    <button class="btn-action btn-submit" onclick="submitAnswer()">▸ ENVIAR [ENTER]</button>
+    <button class="btn-action" onclick="skipLetter()">◦ SALTAR [ESC]</button>
+  </div>
+
+  <div class="ref-toggle" onclick="toggleRef()">▾ VER ALFABETO MORSE COMPLETO</div>
+  <div class="alphabet-ref" id="alphabet-ref"></div>
+
+  <div class="learned-row" id="learned-row"></div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// MORSE DATA — código + nemotécnicos
+// ═══════════════════════════════════════════
+const MORSE = {
+  A: { code: '.-',   es: 'Abeja: A-beja (corto-largo)', en: 'A-lert (short, then long)' },
+  B: { code: '-...',  es: 'Barco: BAR-co-co-co (largo-corto-corto-corto)', en: 'BACK-ward (long then 3 shorts)' },
+  C: { code: '-.-.',  es: 'CaCar: CACA (largo-corto-largo-corto)', en: 'CA-na-DA (dash-dot-dash-dot)' },
+  D: { code: '-..',   es: 'Dado: DA-do-do (largo-corto-corto)', en: 'DON-a-ld (dash-dot-dot)' },
+  E: { code: '.',     es: 'E es el punto más simple del código', en: 'E — the simplest, just one dot' },
+  F: { code: '..-.',  es: 'flaFLAUta: pum-pum-PLUM-pum (corto-corto-largo-corto)', en: 'fun-ny-FILM (dot-dot-dash-dot)' },
+  G: { code: '--.',   es: 'GOf: GO-OL (largo-largo-corto)', en: 'GOD-DAM (dash-dash-dot)' },
+  H: { code: '....',  es: 'Ha-ha-ha-ha: cuatro puntitos de risa', en: 'ha-ha-ha-ha: four laughs, four dots' },
+  I: { code: '..',    es: 'II: dos puntos, como los ojos', en: 'I see: two dots, two eyes' },
+  J: { code: '.---',  es: 'Jabón: ja-BON-BON-BON (corto-largo-largo-largo)', en: 'J-OOO-OOO (one dot, three dashes)' },
+  K: { code: '-.-',   es: 'Kilo: KI-lo-KO (largo-corto-largo)', en: 'COME-a-LONG (dash-dot-dash)' },
+  L: { code: '.-..',  es: 'Lata: la-TA-ta-ta (corto-largo-corto-corto)', en: 'a-LONE-ly (dot-dash-dot-dot)' },
+  M: { code: '--',    es: 'MM: dos rayas, como bigote doble', en: 'MORE: two dashes, twice as much' },
+  N: { code: '-.',    es: 'NO: raya-punto, como negar con firmeza', en: 'NO: dash-dot, firm denial' },
+  O: { code: '---',   es: 'OOO: tres rayas, como una larga o', en: 'Oh-Oh-Oh: three long dashes' },
+  P: { code: '.--.',  es: 'PaPá: pa-PA-PA-pa (corto-largo-largo-corto)', en: 'paPOP-PO (dot-dash-dash-dot)' },
+  Q: { code: '--.-',  es: 'Queso: QUE-SO-qué (largo-largo-corto-largo)', en: 'QUEEN-CAN (dash-dash-dot-dash)' },
+  R: { code: '.-.',   es: 'Rata: ra-TA-ta (corto-largo-corto)', en: 'a-ROUND (dot-dash-dot)' },
+  S: { code: '...',   es: 'Silencio: tres puntos, como "sss"', en: 'S-O-S has three dots in the middle' },
+  T: { code: '-',     es: 'T es la raya sola, opuesto a E', en: 'T is the single dash, opposite of E' },
+  U: { code: '..-',   es: 'Uvas: u-va-BOOM (corto-corto-largo)', en: 'you-and-ME (dot-dot-dash)' },
+  V: { code: '...-',  es: 'Victoria: v-v-v-BOOM, como Beethoven 5ta', en: 'V for VicTORY: dot-dot-dot-DASH' },
+  W: { code: '.--',   es: 'Whisky: w-WHIS-KY (corto-largo-largo)', en: 'we-WILL (dot-dash-dash)' },
+  X: { code: '-..-',  es: 'X-files: BOOM-bo-bo-BOOM (largo-corto-corto-largo)', en: 'X-marks: dash-dot-dot-dash' },
+  Y: { code: '-.--',  es: 'Yate: YA-TE-SA-IL (largo-corto-largo-largo)', en: 'YOU-are-SO-COOL (dash-dot-dash-dash)' },
+  Z: { code: '--..',  es: 'Zorro: ZO-RRO-ta-ta (largo-largo-corto-corto)', en: 'ZO-RRO-runs (dash-dash-dot-dot)' },
+};
+
+// Orden de aprendizaje (de más fácil/común a más complejo)
+const LEARN_ORDER = ['E','T','A','N','I','M','S','O','R','H','D','L','U','C','F','G','P','B','W','Y','J','K','V','X','Q','Z'];
+
+// ═══════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════
+let unlockedCount = 1;      // cuántas letras están desbloqueadas
+let currentLetter = '';
+let currentInput = [];
+let correctCount = 0;
+let errorCount = 0;
+let streak = 0;
+let hintVisible = false;
+let submitLocked = false;
+let timeoutTimer = null;
+let autoSubmitTimer = null;
+
+// Pesos para repetición (más errores = más frecuente)
+let letterWeights = {};
+LEARN_ORDER.forEach((l, i) => letterWeights[l] = 1);
+
+// Historial reciente para no repetir la misma dos veces seguidas
+let lastLetter = '';
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+function init() {
+  buildAlphabetRef();
+  buildLearnedRow();
+  nextLetter();
+  document.getElementById('status-msg').textContent = 'INGRESÁ LA SECUENCIA Y PRESIONÁ ENVIAR';
+}
+
+function buildAlphabetRef() {
+  const ref = document.getElementById('alphabet-ref');
+  LEARN_ORDER.forEach(l => {
+    const m = MORSE[l];
+    const div = document.createElement('div');
+    div.className = 'alpha-item';
+    div.id = 'alpha-' + l;
+    div.innerHTML = `<span class="al">${l}</span><span class="am">${formatMorse(m.code)}</span>`;
+    ref.appendChild(div);
+  });
+}
+
+function buildLearnedRow() {
+  const row = document.getElementById('learned-row');
+  row.innerHTML = '';
+  for (let i = 0; i < unlockedCount; i++) {
+    const l = LEARN_ORDER[i];
+    const span = document.createElement('span');
+    span.className = 'learned-badge' + (l === currentLetter ? ' current' : '');
+    span.textContent = l;
+    row.appendChild(span);
+  }
+}
+
+function formatMorse(code) {
+  return code.split('').map(c => c === '.' ? '<span class="dot">•</span>' : '<span class="dash">▬</span>').join('');
+}
+
+// ═══════════════════════════════════════════
+// SELECCIÓN DE LETRA
+// ═══════════════════════════════════════════
+function pickNextLetter() {
+  const available = LEARN_ORDER.slice(0, unlockedCount);
+  
+  // Pesos: letras con más errores aparecen más
+  const totalWeight = available.reduce((sum, l) => sum + letterWeights[l], 0);
+  let rand = Math.random() * totalWeight;
+  
+  for (const l of available) {
+    rand -= letterWeights[l];
+    if (rand <= 0 && l !== lastLetter) return l;
+  }
+  // Fallback
+  return available[Math.floor(Math.random() * available.length)];
+}
+
+function nextLetter() {
+  clearTimers();
+  currentInput = [];
+  hintVisible = false;
+  submitLocked = false;
+
+  document.getElementById('hint-panel').classList.remove('visible');
+  document.getElementById('input-display').innerHTML = '';
+  document.getElementById('timeout-fill').style.transition = 'none';
+  document.getElementById('timeout-fill').style.width = '100%';
+
+  currentLetter = pickNextLetter();
+  lastLetter = currentLetter;
+
+  const ld = document.getElementById('letter-display');
+  ld.textContent = currentLetter;
+  ld.className = 'letter-display';
+
+  // Mostrar código solo si tiene muchos errores (peso > 3)
+  const showCode = letterWeights[currentLetter] > 3;
+  if (showCode) {
+    document.getElementById('morse-ref').innerHTML = formatMorse(MORSE[currentLetter].code);
+  } else {
+    document.getElementById('morse-ref').innerHTML = '';
+  }
+
+  document.getElementById('status-msg').textContent = 'INGRESÁ: ' + MORSE[currentLetter].code.replace(/\./g,'•').replace(/-/g,'▬');
+  document.getElementById('status-msg').className = 'status-msg';
+
+  buildLearnedRow();
+  startTimeoutBar();
+}
+
+// ═══════════════════════════════════════════
+// BARRA DE TIEMPO (auto-submit después de N segundos sin input)
+// ═══════════════════════════════════════════
+function startTimeoutBar() {
+  const duration = 8000;
+  const fill = document.getElementById('timeout-fill');
+  setTimeout(() => {
+    fill.style.transition = `width ${duration}ms linear`;
+    fill.style.width = '0%';
+  }, 50);
+
+  autoSubmitTimer = setTimeout(() => {
+    if (currentInput.length > 0) {
+      submitAnswer();
+    } else {
+      showError();
+    }
+  }, duration);
+}
+
+function clearTimers() {
+  if (autoSubmitTimer) clearTimeout(autoSubmitTimer);
+  if (timeoutTimer) clearTimeout(timeoutTimer);
+}
+
+// ═══════════════════════════════════════════
+// INPUT
+// ═══════════════════════════════════════════
+function pressSymbol(sym) {
+  if (submitLocked) return;
+  clearTimers();
+
+  currentInput.push(sym);
+
+  const span = document.createElement('span');
+  span.className = 'input-symbol ' + (sym === '.' ? 'dot' : 'dash');
+  span.textContent = sym === '.' ? '•' : '▬';
+  document.getElementById('input-display').appendChild(span);
+
+  // Reset timeout
+  document.getElementById('timeout-fill').style.transition = 'none';
+  document.getElementById('timeout-fill').style.width = '100%';
+  setTimeout(() => {
+    const remaining = 4000;
+    document.getElementById('timeout-fill').style.transition = `width ${remaining}ms linear`;
+    document.getElementById('timeout-fill').style.width = '0%';
+  }, 50);
+
+  autoSubmitTimer = setTimeout(() => {
+    if (currentInput.length > 0) submitAnswer();
+  }, 4000);
+
+  // Flash button
+  const btnId = sym === '.' ? 'btn-dot' : 'btn-dash';
+  document.getElementById(btnId).classList.add('active');
+  setTimeout(() => document.getElementById(btnId).classList.remove('active'), 150);
+}
+
+function preventDef(e) { e.preventDefault(); }
+
+function e(event, sym) {
+  event.preventDefault();
+  pressSymbol(sym);
+}
+
+// ═══════════════════════════════════════════
+// SUBMIT
+// ═══════════════════════════════════════════
+function submitAnswer() {
+  if (submitLocked) return;
+  submitLocked = true;
+  clearTimers();
+
+  const answer = currentInput.join('');
+  const correct = MORSE[currentLetter].code;
+
+  if (answer === correct) {
+    // ✓ Correcto
+    correctCount++;
+    streak++;
+    letterWeights[currentLetter] = Math.max(1, letterWeights[currentLetter] - 0.5);
+
+    document.getElementById('letter-display').classList.add('flash-ok');
+    document.getElementById('status-msg').textContent = '✓ CORRECTO!';
+    document.getElementById('status-msg').className = 'status-msg ok';
+
+    updateStats();
+    checkUnlock();
+
+    timeoutTimer = setTimeout(() => nextLetter(), 1000);
+  } else {
+    showError();
+  }
+}
+
+function showError() {
+  submitLocked = true;
+  clearTimers();
+  errorCount++;
+  streak = 0;
+  letterWeights[currentLetter] = Math.min(8, letterWeights[currentLetter] + 2);
+
+  document.getElementById('letter-display').classList.add('flash-err');
+  document.getElementById('status-msg').textContent = '✗ INCORRECTO — ESTUDIÁ LA AYUDA';
+  document.getElementById('status-msg').className = 'status-msg err';
+
+  // Mostrar hint
+  document.getElementById('hint-letter').textContent = currentLetter;
+  document.getElementById('hint-morse').innerHTML = formatMorse(MORSE[currentLetter].code);
+  const m = MORSE[currentLetter];
+  document.getElementById('hint-mnemonic').innerHTML =
+    `<strong>ES:</strong> ${m.es}<br><strong>EN:</strong> ${m.en}`;
+  document.getElementById('hint-panel').classList.add('visible');
+
+  updateStats();
+
+  timeoutTimer = setTimeout(() => nextLetter(), 5000);
+}
+
+function skipLetter() {
+  clearTimers();
+  currentInput = [];
+  document.getElementById('input-display').innerHTML = '';
+  nextLetter();
+}
+
+// ═══════════════════════════════════════════
+// PROGRESIÓN
+// ═══════════════════════════════════════════
+function checkUnlock() {
+  if (unlockedCount >= 26) return;
+
+  // Desbloquear nueva letra cada 5 respuestas correctas o si streak alto
+  if (correctCount > 0 && correctCount % 5 === 0 && unlockedCount < 26) {
+    unlockedCount++;
+    const newLetter = LEARN_ORDER[unlockedCount - 1];
+    showNewLetterNotice(newLetter);
+  }
+}
+
+function showNewLetterNotice(letter) {
+  const old = document.getElementById('status-msg').textContent;
+  document.getElementById('status-msg').textContent = `🔓 NUEVA LETRA DESBLOQUEADA: ${letter} (${MORSE[letter].code})`;
+  document.getElementById('status-msg').className = 'status-msg ok';
+}
+
+function updateStats() {
+  document.getElementById('correct').textContent = correctCount;
+  document.getElementById('streak').textContent = streak;
+  document.getElementById('errors').textContent = errorCount;
+  document.getElementById('learned-count').textContent = unlockedCount;
+
+  const pct = Math.round((unlockedCount / 26) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = unlockedCount + '/26';
+}
+
+function toggleRef() {
+  const ref = document.getElementById('alphabet-ref');
+  ref.classList.toggle('visible');
+  document.querySelector('.ref-toggle').textContent = ref.classList.contains('visible')
+    ? '▴ CERRAR ALFABETO'
+    : '▾ VER ALFABETO MORSE COMPLETO';
+}
+
+// ═══════════════════════════════════════════
+// KEYBOARD
+// ═══════════════════════════════════════════
+document.addEventListener('keydown', (e) => {
+  if (e.repeat) return;
+  switch(e.key) {
+    case 'ArrowLeft':
+    case 'f':
+    case 'F':
+    case 'j':
+    case 'J':
+      e.preventDefault();
+      pressSymbol('.');
+      break;
+    case 'ArrowRight':
+    case 'd':
+    case 'D':
+    case 'k':
+    case 'K':
+      e.preventDefault();
+      pressSymbol('-');
+      break;
+    case 'Enter':
+      e.preventDefault();
+      submitAnswer();
+      break;
+    case 'Escape':
+    case ' ':
+      e.preventDefault();
+      skipLetter();
+      break;
+    case 'Backspace':
+      e.preventDefault();
+      if (currentInput.length > 0 && !submitLocked) {
+        currentInput.pop();
+        const disp = document.getElementById('input-display');
+        if (disp.lastChild) disp.removeChild(disp.lastChild);
+      }
+      break;
+  }
+});
+
+// ═══════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
