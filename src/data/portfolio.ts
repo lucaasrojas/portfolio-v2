@@ -106,19 +106,6 @@ export const apps: App[] = [
     icon: '📡',
   },
   {
-    slug: 'wardrobe-organizer',
-    title: 'Wardrobe Organizer',
-    description: 'Organiza tu guardarropa de forma fácil y visual.',
-    longDescription:
-      'App para organizar tu guardarropa con categorías y filtros.',
-    status: 'wip',
-    tags: ['React', 'TypeScript', 'SRS', 'Claude did it'],
-    href: '/apps/wardrobe-organizer',
-    repo: 'https://github.com/lucaasrojas/wardrobe-organizer',
-    internal: true,
-    icon: '📡',
-  },
-  {
     slug: 'steam-train',
     title: 'Steam Train',
     description: 'Maneja un tren a vapor a través de un paisaje pixelado.',
@@ -128,7 +115,7 @@ export const apps: App[] = [
     href: '/apps/steam-train',
     repo: 'https://github.com/lucaasrojas/steam-train',
     internal: true,
-    icon: '📡',
+    icon: '🚂',
   },
   {
     slug: 'wpp-generator',
@@ -142,7 +129,7 @@ export const apps: App[] = [
     href: '/apps/wpp-generator',
     repo: 'https://github.com/lucaasrojas/wpp-generator',
     internal: true,
-    icon: '📡',
+    icon: '💬',
   },
   {
     slug: 'flights-board',
@@ -154,7 +141,7 @@ export const apps: App[] = [
     href: '/apps/flights-board',
     repo: '',
     internal: true,
-    icon: '📡',
+    icon: '✈️',
   },
   {
     slug: 'conversa-cards',
@@ -166,7 +153,7 @@ export const apps: App[] = [
     href: '/apps/conversa-cards',
     repo: '',
     internal: true,
-    icon: '📡',
+    icon: '✨',
   },
   {
     slug: 'excuses-generator',
@@ -179,7 +166,7 @@ export const apps: App[] = [
     href: '/apps/excuses-generator',
     repo: '',
     internal: true,
-    icon: '📡',
+    icon: '🙊',
   },
   {
     slug: 'best-timer',
@@ -192,7 +179,7 @@ export const apps: App[] = [
     href: '/apps/best-timer',
     repo: '',
     internal: true,
-    icon: '📡',
+    icon: '⏱️',
   },
 
   {
@@ -205,7 +192,7 @@ export const apps: App[] = [
     href: '/apps/first-html-page',
     repo: '',
     internal: true,
-    icon: '📡',
+    icon: '📄',
   },
 
   {
@@ -218,7 +205,7 @@ export const apps: App[] = [
     href: '/apps/ml-price-tracker',
     repo: '',
     internal: true,
-    icon: '📡',
+    icon: '🛒',
   },
   // Ejemplo de app externa (redirect a otra URL):
   // {

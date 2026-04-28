@@ -87,7 +87,6 @@ export default function Apps() {
                             href={app.repo}
                             target="_blank"
                             rel="noopener noreferrer"
-                            // onClick={(e) => e.stopPropagation()}
                             className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                             aria-label="GitHub repo"
                           >
