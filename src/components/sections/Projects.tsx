@@ -1,6 +1,6 @@
-import SectionHeader from '@/components/ui/SectionHeader'
-import { projects } from '@/data/portfolio'
-import { Github, ExternalLink } from 'lucide-react'
+import SectionHeader from '@/components/ui/SectionHeader';
+import { projects } from '@/data/portfolio';
+import { Github, ExternalLink } from 'lucide-react';
 
 export default function Projects() {
   return (
@@ -11,8 +11,7 @@ export default function Projects() {
         {projects.length === 0 ? (
           <div className="border-2 border-dashed border-[var(--border-dark)] rounded-2xl p-16 text-center">
             <p className="font-mono text-[var(--text-muted)] text-sm">
-              // Agregá tus proyectos en{' '}
-              <span className="text-[var(--text-secondary)]">src/data/portfolio.ts</span>
+              En construcción... 🚧
             </p>
           </div>
         ) : (
@@ -66,5 +65,5 @@ export default function Projects() {
         )}
       </div>
     </section>
-  )
+  );
 }
