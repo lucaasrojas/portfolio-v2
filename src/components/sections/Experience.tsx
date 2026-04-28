@@ -39,9 +39,9 @@ export default function Experience() {
                     </p>
                   </div>
 
-                  <p className="text-[var(--text-secondary)] text-sm leading-relaxed mb-4">
+                  {/* <p className="text-[var(--text-secondary)] text-sm leading-relaxed mb-4">
                     {job.description}
-                  </p>
+                  </p> */}
 
                   <div className="flex flex-wrap gap-2">
                     {job.tech.map((t) => (

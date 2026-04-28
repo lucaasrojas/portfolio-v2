@@ -1,15 +1,15 @@
-import Image from 'next/image'
-import Marquee from '@/components/ui/Marquee'
-import { siteConfig } from '@/data/portfolio'
-import { Download } from 'lucide-react'
+import Image from 'next/image';
+import Marquee from '@/components/ui/Marquee';
+import { siteConfig } from '@/data/portfolio';
+import { Download } from 'lucide-react';
 
 const marqueeItems = [
   'Frontend Developer',
   'React · Next.js · TypeScript',
   'Buenos Aires',
-  'Open to work',
+  'Self-taught',
   'Since 2018',
-]
+];
 
 export default function Hero() {
   return (
@@ -18,7 +18,6 @@ export default function Hero() {
       <div className="flex-1 flex items-center">
         <div className="max-w-5xl mx-auto px-6 w-full py-16">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-
             {/* Left: Text */}
             <div className="flex flex-col gap-6">
               {/* Hello pill */}
@@ -75,7 +74,6 @@ export default function Hero() {
             {/* Right: Photo + badge */}
             <div className="flex justify-center md:justify-end">
               <div className="relative">
-
                 {/* Rotating badge */}
                 <div className="absolute -top-6 -right-6 z-10">
                   <div className="relative w-24 h-24">
@@ -89,7 +87,13 @@ export default function Hero() {
                           d="M 50,50 m -30,0 a 30,30 0 1,1 60,0 a 30,30 0 1,1 -60,0"
                         />
                       </defs>
-                      <text className="fill-[var(--text-primary)]" fontSize="9.5" fontFamily="monospace" fontWeight="600" letterSpacing="2">
+                      <text
+                        className="fill-[var(--text-primary)]"
+                        fontSize="9.5"
+                        fontFamily="monospace"
+                        fontWeight="600"
+                        letterSpacing="2"
+                      >
                         <textPath href="#circle">
                           AVAILABLE FOR NEW PROJECTS ✦
                         </textPath>
@@ -97,26 +101,36 @@ export default function Hero() {
                     </svg>
                     {/* Center arrow */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-[var(--text-primary)] text-lg font-bold">↗</span>
+                      <span className="text-[var(--text-primary)] text-lg font-bold">
+                        ↗
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Photo in arch shape */}
                 <div
-                  className="relative w-64 h-80 md:w-72 md:h-88 overflow-hidden border-4 border-[var(--accent)]"
+                  className="relative w-64 h-80 md:w-72 md:h-88   border-4 border-[var(--accent)] bg-[var(--bg-surface)]"
                   style={{ borderRadius: '999px 999px 0 0' }}
                 >
                   {/* Placeholder */}
-                  <div className="w-full h-full bg-[var(--bg-surface)] flex items-center justify-center">
+                  {/* <div className="w-full h-full bg-[var(--bg-surface)] flex items-center justify-center">
                     <div className="text-center text-[var(--text-muted)]">
                       <div className="text-5xl mb-2">👤</div>
                       <p className="font-mono text-xs">profile_pic.jpg</p>
                       <p className="font-mono text-xs opacity-60">public/assets/</p>
                     </div>
-                  </div>
+                  </div> */}
                   {/* Swap placeholder with real image: */}
-                  {/* <Image src="/assets/profile_pic.jpg" alt="Lucas Rojas" fill className="object-cover" priority /> */}
+                  <div className="w-full h-[24rem] bottom-[2px] absolute">
+                    <Image
+                      src="/assets/profile_pic.png"
+                      alt="Lucas Rojas"
+                      fill
+                      className="object-cover"
+                      priority
+                    />
+                  </div>
                 </div>
 
                 {/* Location badge */}
@@ -134,5 +148,5 @@ export default function Hero() {
       {/* Marquee at the bottom of hero */}
       <Marquee items={marqueeItems} />
     </section>
-  )
+  );
 }

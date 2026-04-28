@@ -1,4 +1,4 @@
-import type { App, Experience, Project, TechItem } from '@/types'
+import type { App, Experience, Project, TechItem } from '@/types';
 
 export const siteConfig = {
   name: 'Lucas Rojas',
@@ -9,21 +9,21 @@ export const siteConfig = {
   email: 'lucas@example.com',
   github: 'https://github.com/lucaasrojas',
   linkedin: 'https://linkedin.com/in/lucaasrojas',
-  cv: '/Lucas_Rojas.pdf',
-}
+  cv: '/assets/cv_lucas_rojas.pdf',
+};
 
 export const techStack: TechItem[] = [
   { name: 'React', icon: '⚛️' },
   { name: 'Next.js', icon: '▲' },
   { name: 'TypeScript', icon: '🔷' },
-  { name: 'Redux / Context', icon: '🔄' },
+  { name: 'Redux / Context / Zustand', icon: '🔄' },
   { name: 'Tailwind CSS', icon: '🎨' },
   { name: 'shadcn/ui', icon: '🧩' },
   { name: 'Figma / UX·UI', icon: '✏️' },
-  { name: 'Jest / Testing Library', icon: '🧪' },
+  { name: 'Vitest / Jest', icon: '🧪' },
   { name: 'AWS', icon: '☁️' },
   { name: 'Node.js', icon: '🟢' },
-]
+];
 
 export const experience: Experience[] = [
   {
@@ -59,7 +59,7 @@ export const experience: Experience[] = [
       'Desarrollo full-stack de soluciones cloud para el ecosistema Microsoft Azure.',
     tech: ['React', 'Node.js', 'Azure'],
   },
-]
+];
 
 export const projects: Project[] = [
   // Agregá tus proyectos destacados acá
@@ -70,7 +70,7 @@ export const projects: Project[] = [
   //   github: 'https://github.com/...',
   //   live: 'https://...',
   // },
-]
+];
 
 // ─── APPS ────────────────────────────────────────────────────────────────────
 // Para agregar una nueva app:
@@ -92,11 +92,12 @@ export const apps: App[] = [
   //   internal: true,
   //   icon: '📡',
   // },
-    {
+  {
     slug: 'morse-code-trainer',
     title: 'Morse Trainer',
     description: 'Entrenador de código Morse con repetición espaciada.',
-    longDescription: 'App para aprender Morse con mnemonics en español y sistema SRS.',
+    longDescription:
+      'App para aprender Morse con mnemonics en español y sistema SRS.',
     status: 'wip',
     tags: ['React', 'TypeScript', 'SRS', 'Claude did it'],
     href: '/apps/morse-code-trainer',
@@ -104,11 +105,12 @@ export const apps: App[] = [
     internal: true,
     icon: '📡',
   },
-      {
+  {
     slug: 'wardrobe-organizer',
     title: 'Wardrobe Organizer',
     description: 'Organiza tu guardarropa de forma fácil y visual.',
-    longDescription: 'App para organizar tu guardarropa con categorías y filtros.',
+    longDescription:
+      'App para organizar tu guardarropa con categorías y filtros.',
     status: 'wip',
     tags: ['React', 'TypeScript', 'SRS', 'Claude did it'],
     href: '/apps/wardrobe-organizer',
@@ -116,7 +118,7 @@ export const apps: App[] = [
     internal: true,
     icon: '📡',
   },
-      {
+  {
     slug: 'steam-train',
     title: 'Steam Train',
     description: 'Maneja un tren a vapor a través de un paisaje pixelado.',
@@ -127,8 +129,97 @@ export const apps: App[] = [
     repo: 'https://github.com/lucaasrojas/steam-train',
     internal: true,
     icon: '📡',
-  }
+  },
+  {
+    slug: 'wpp-generator',
+    title: 'WPP Generator',
+    description:
+      'Generador de mensajes para WhatsApp con plantillas y automatización.',
+    longDescription:
+      'App para crear y enviar mensajes de WhatsApp de forma rápida y eficiente.',
+    status: 'wip',
+    tags: ['React', 'TypeScript', 'Tailwind CSS'],
+    href: '/apps/wpp-generator',
+    repo: 'https://github.com/lucaasrojas/wpp-generator',
+    internal: true,
+    icon: '📡',
+  },
+  {
+    slug: 'flights-board',
+    title: 'Flights Board',
+    description: 'Sigue tus vuelos favoritos.',
+    longDescription: 'App para seguir los vuelos favoritos.',
+    status: 'wip',
+    tags: ['HTML', 'CSS', 'JavaScript'],
+    href: '/apps/flights-board',
+    repo: '',
+    internal: true,
+    icon: '📡',
+  },
+  {
+    slug: 'conversa-cards',
+    title: 'Conversa Cards',
+    description: 'Tarjetas de conversación para conocernos mas.',
+    longDescription: 'App para abrirnos.',
+    status: 'wip',
+    tags: ['React', 'Tailwind CSS'],
+    href: '/apps/conversa-cards',
+    repo: '',
+    internal: true,
+    icon: '📡',
+  },
+  {
+    slug: 'excuses-generator',
+    title: 'Excuses Generator',
+    description: 'Generador de excusas para cuando no sabes qué decir.',
+    longDescription:
+      'App para generar excusas creativas cuando no sabes qué decir.',
+    status: 'live',
+    tags: ['React', 'Tailwind CSS'],
+    href: '/apps/excuses-generator',
+    repo: '',
+    internal: true,
+    icon: '📡',
+  },
+  {
+    slug: 'best-timer',
+    title: 'Best Timer',
+    description: 'Temporizador simple y efectivo.',
+    longDescription:
+      'App para gestionar tu tiempo con un temporizador intuitivo.',
+    status: 'live',
+    tags: ['React'],
+    href: '/apps/best-timer',
+    repo: '',
+    internal: true,
+    icon: '📡',
+  },
 
+  {
+    slug: 'first-html-page',
+    title: 'Mi Primera Página HTML',
+    description: '',
+    longDescription: '',
+    status: 'live',
+    tags: ['React'],
+    href: '/apps/first-html-page',
+    repo: '',
+    internal: true,
+    icon: '📡',
+  },
+
+  {
+    slug: 'ml-price-tracker',
+    title: 'ML Price Tracker',
+    description: 'Sigue los precios de los productos que mas queres',
+    longDescription: '',
+    status: 'wip',
+    tags: ['React'],
+    href: '/apps/ml-price-tracker',
+    repo: '',
+    internal: true,
+    icon: '📡',
+  },
   // Ejemplo de app externa (redirect a otra URL):
   // {
   //   slug: 'filededup',
@@ -141,4 +232,4 @@ export const apps: App[] = [
   //   internal: false,
   //   icon: '🗂️',
   // },
-]
+];
