@@ -234,6 +234,15 @@ export const curiosities: Curiosity[] = [
     icon: '👗',
   },
   {
+    slug: 'specialty_coffee',
+    title: 'Barismo y Café de Especialidad',
+    description: 'Como hacer cafe sin morir en el intento.',
+    longDescription: '',
+    tags: ['Cafe', 'Granos', 'Design'],
+    href: '/curiosities/specialty-coffee',
+    icon: '☕',
+  },
+  {
     slug: 'amateur_radio',
     title: 'Radioaficionado (Proximamente)',
     description:
@@ -242,15 +251,6 @@ export const curiosities: Curiosity[] = [
     tags: ['Radio', 'Electronica', 'Comunicaciones'],
     href: '',
     icon: '📻',
-  },
-  {
-    slug: 'specialty_coffee',
-    title: 'Barismo y Café de Especialidad (Proximamente)',
-    description: 'Como hacer cafe sin morir en el intento.',
-    longDescription: '',
-    tags: ['Cafe', 'Granos', 'Design'],
-    href: '',
-    icon: '☕',
   },
   {
     slug: 'makeup',
