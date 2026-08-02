@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { siteConfig } from '@/data/portfolio';
 import { Menu, X } from 'lucide-react';
@@ -14,6 +15,7 @@ const links = [
 ];
 
 export default function Navbar() {
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -22,6 +24,22 @@ export default function Navbar() {
     window.addEventListener('scroll', fn);
     return () => window.removeEventListener('scroll', fn);
   }, []);
+
+  const handleNavigate = (href: string) => {
+    if (href.startsWith('#')) {
+      const sectionId = href.slice(1);
+
+      if (window.location.pathname !== '/') {
+        router.push(`/${href}`);
+        return;
+      }
+
+      const section = document.getElementById(sectionId);
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
 
   return (
     <header
@@ -47,6 +65,10 @@ export default function Navbar() {
             <a
               key={l.href}
               href={l.href}
+              onClick={(event) => {
+                event.preventDefault();
+                handleNavigate(l.href);
+              }}
               className="font-mono text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
               {l.label}
@@ -78,7 +100,11 @@ export default function Navbar() {
             <a
               key={l.href}
               href={l.href}
-              onClick={() => setOpen(false)}
+              onClick={(event) => {
+                event.preventDefault();
+                setOpen(false);
+                handleNavigate(l.href);
+              }}
               className="font-mono text-sm text-[var(--text-secondary)]"
             >
               {l.label}
