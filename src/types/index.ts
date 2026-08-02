@@ -38,3 +38,15 @@ export interface TechItem {
   name: string
   icon: string
 }
+
+export interface Curiosity {
+  slug: string
+  title: string
+  description: string
+  longDescription?: string
+  tags: string[]
+  /** URL externa o path interno (/curiosities/exploring-fashion-production) */
+  href?: string
+ /** Ícono emoji o string */
+  icon?: string
+}

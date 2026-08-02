@@ -1,5 +1,5 @@
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -68,7 +68,20 @@
   html {
     scroll-behavior: smooth;
     scroll-padding-top: 80px;
-  font-family: var(--font-sans);
+    font-family: var(--font-playfair), Georgia, serif;
+  }
+
+  h2 {
+    font-family: var(--font-playfair), Georgia, serif;
+    color: var(--text-primary);
+    padding: 0.5rem 0;
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-family: var(--font-playfair), Georgia, serif;
+    color: var(--text-primary);
+    padding: 0.5rem 0;
   }
 
   body {
@@ -120,18 +133,16 @@
     --sidebar-ring: oklch(0.556 0 0);
   }
 }
-/* 
+
 @layer utilities {
   .font-display {
     font-family: var(--font-playfair), Georgia, serif;
   }
 
-  Marquee
-  .pause-on-hover:hover .animate-marquee {
+  Marquee .pause-on-hover:hover .animate-marquee {
     animation-play-state: paused;
   }
 }
-*/
 
 /* Scrollbar */
 ::-webkit-scrollbar {

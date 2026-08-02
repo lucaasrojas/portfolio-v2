@@ -5,6 +5,7 @@ import Experience from '@/components/sections/Experience'
 import Projects from '@/components/sections/Projects'
 import Apps from '@/components/sections/Apps'
 import Footer from '@/components/layout/Footer'
+import Curiosities from '@/components/sections/Curiosities'
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
         <Experience />
         {/* <Projects /> */}
         <Apps />
+        <Curiosities />
       </main>
       <Footer />
     </>

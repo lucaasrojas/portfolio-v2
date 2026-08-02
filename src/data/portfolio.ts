@@ -1,4 +1,4 @@
-import type { App, Experience, Project, TechItem } from '@/types';
+import type { App, Curiosity, Experience, Project, TechItem } from '@/types';
 
 export const siteConfig = {
   name: 'Lucas Rojas',
@@ -219,4 +219,18 @@ export const apps: App[] = [
   //   internal: false,
   //   icon: '🗂️',
   // },
+];
+
+export const curiosities: Curiosity[] = [
+  {
+    slug: 'exploring_fashion_production',
+    title: 'Explorando la Producción de Moda',
+    description:
+      'Investigando los procesos de producción en la industria de la moda.',
+    longDescription:
+      'App para explorar y entender los aspectos clave de la producción en la industria de la moda.',
+    tags: ['Fashion', 'Production', 'Design'],
+    href: '/curiosities/exploring-fashion-production',
+    icon: '👗',
+  },
 ];

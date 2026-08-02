@@ -1,27 +1,27 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { cn } from '@/lib/utils'
-import { siteConfig } from '@/data/portfolio'
-import { Menu, X } from 'lucide-react'
+import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+import { siteConfig } from '@/data/portfolio';
+import { Menu, X } from 'lucide-react';
 
 const links = [
   { label: 'Home', href: '#home' },
   { label: 'Stack', href: '#stack' },
   { label: 'Experience', href: '#experience' },
-  // { label: 'Projects', href: '#projects' },
   { label: 'Apps', href: '#apps' },
-]
+  { label: 'Curiosities', href: '#curiosities' },
+];
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false)
-  const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 32)
-    window.addEventListener('scroll', fn)
-    return () => window.removeEventListener('scroll', fn)
-  }, [])
+    const fn = () => setScrolled(window.scrollY > 32);
+    window.addEventListener('scroll', fn);
+    return () => window.removeEventListener('scroll', fn);
+  }, []);
 
   return (
     <header
@@ -94,5 +94,5 @@ export default function Navbar() {
         </div>
       )}
     </header>
-  )
+  );
 }
