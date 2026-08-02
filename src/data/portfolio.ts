@@ -233,4 +233,33 @@ export const curiosities: Curiosity[] = [
     href: '/curiosities/exploring-fashion-production',
     icon: '👗',
   },
+  {
+    slug: 'amateur_radio',
+    title: 'Radioaficionado (Proximamente)',
+    description:
+      'CQ CQ CQ - Explorando el mundo de la radioafición y la comunicación inalámbrica.',
+    longDescription: '',
+    tags: ['Radio', 'Electronica', 'Comunicaciones'],
+    href: '',
+    icon: '📻',
+  },
+  {
+    slug: 'specialty_coffee',
+    title: 'Barismo y Café de Especialidad (Proximamente)',
+    description: 'Como hacer cafe sin morir en el intento.',
+    longDescription: '',
+    tags: ['Cafe', 'Granos', 'Design'],
+    href: '',
+    icon: '☕',
+  },
+  {
+    slug: 'makeup',
+    title: 'Maquillaje (Proximamente)',
+    description:
+      'Entendiendo la colorimetria, visagismo y el poder del maquillaje.',
+    longDescription: '',
+    tags: ['Fashion', 'Maquillaje', 'Colorimetria', 'Visagismo'],
+    href: '',
+    icon: '💄',
+  },
 ];

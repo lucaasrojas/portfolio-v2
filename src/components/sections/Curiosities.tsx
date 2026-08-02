@@ -50,9 +50,11 @@ export default function Curiosities() {
                     ))}
                   </div>
 
-                  <Link href={app.href!} className="block">
-                    {'Explorar ->'}
-                  </Link>
+                  {app.href && (
+                    <Link href={app.href!} className="block">
+                      {'Explorar ->'}
+                    </Link>
+                  )}
                 </div>
               );
             })}
