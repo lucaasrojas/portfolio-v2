@@ -17,7 +17,7 @@ export function ImagesCarousel({
     <Carousel className="max-w-[400px] mx-auto">
       <CarouselContent>
         {items.map((filename) => (
-          <CarouselItem>
+          <CarouselItem key={filename}>
             <Image
               src={`/assets/images/${subpath}/${filename}`}
               alt="Imagen de la producción de moda"

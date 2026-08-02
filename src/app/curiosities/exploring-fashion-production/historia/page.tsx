@@ -60,11 +60,11 @@ export default function FashionHistoryPage() {
         className="my-8 rounded-lg mx-auto"
       />
       <h2>Analisis del periodo Espacial</h2>
-      André Courrèges, quien luego sería reconocido como el padre de la moda
+      {`André Courrèges, quien luego sería reconocido como el padre de la moda
       espacial, presentó la colección "Moon Girl” en 1964 donde mostraba
       minifaldas y vestidos con corte A, pantalones blancos y botas planas, las
       “go-go boots”, pero con la particularidad de que los materiales eran
-      sintéticos mostrando así el plástico y vinilo.
+      sintéticos mostrando así el plástico y vinilo.`}
       <Image
         src="/assets/images/curiosities/exploring-fashion-production/Picture4.png"
         alt="Imagen de la producción de moda"
