@@ -11,7 +11,7 @@ export function ImagesCarousel({
   subpath,
 }: {
   items: string[];
-  subpath: string;
+  subpath?: string;
 }) {
   return (
     <Carousel className="max-w-[400px] mx-auto">
@@ -19,7 +19,7 @@ export function ImagesCarousel({
         {items.map((filename) => (
           <CarouselItem key={filename}>
             <Image
-              src={`/assets/images/${subpath}/${filename}`}
+              src={subpath ? `/assets/images/${subpath}/${filename}` : filename}
               alt="Imagen de la producción de moda"
               width={400}
               height={300}

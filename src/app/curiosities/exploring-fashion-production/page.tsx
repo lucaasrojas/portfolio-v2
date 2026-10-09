@@ -5,12 +5,13 @@ export default function ExploringFashionProductionPage() {
   return (
     <SectionPageWrapper title="Explorando la Producción de Moda" description="">
       <h2>Que es la producción de moda?</h2>
-      La producción de moda es el proceso por el cual se da vida a una idea ya
-      sea como imagen, video o show. La persona a cargo debe interpretar las
-      tendencias y leer el mercado para poder comunicar la moda de forma
-      creativa, sencilla y facil de interpretar a un publico determinado, como
-      tambien tambien coordinar los distintos equipos y profesionales para
-      llevarlo a cabo.
+      La produccion es el proceso en el cual se transforma, se da vida, a una
+      idea ya sea en formato de imagen, video, eventos, desfiles y/o campañas
+      que ees llevado a cabo por el producto de moda. El productor es aquel
+      profesional encargado de interpretar las tendencias y leer el mercado para
+      poder comunicar la moda de forma creativa, sencilla y facil de interpretar
+      a un publico determinado como tambien coordinar los distintos equipos y
+      profesionales para llevarlo a cabo.
       <h2>Como se lleva a cabo una producción de moda?</h2>
       Se deben tener en cuenta tres elementos:
       <ul className="list-disc list-inside my-4">
@@ -28,9 +29,7 @@ export default function ExploringFashionProductionPage() {
         <TopicCard slug="analisis-de-campanas">
           <TopicCard.Title>Analisis de Campañas y Diseñadores</TopicCard.Title>
           <TopicCard.Description>
-            En esta sección, exploraremos en profundidad el análisis de campañas
-            de moda, desglosando los elementos clave que hacen que una campaña
-            sea efectiva y memorable.
+            Análisis de campañas elaboaradas durante el curso.
           </TopicCard.Description>
           <TopicCard.Link href="/curiosities/exploring-fashion-production/analisis-de-campanas">
             {'Abrir ->'}
@@ -39,9 +38,8 @@ export default function ExploringFashionProductionPage() {
         <TopicCard slug="historia">
           <TopicCard.Title>Historia de la Moda</TopicCard.Title>
           <TopicCard.Description>
-            En esta sección, exploraremos en profundidad la historia de la moda,
-            desde sus orígenes hasta la actualidad, analizando su evolución y
-            impacto en la sociedad.
+            La historia de la moda, desde sus orígenes analizando su evolución e
+            impacto.
           </TopicCard.Description>
           <TopicCard.Link href="/curiosities/exploring-fashion-production/historia">
             {'Abrir ->'}
@@ -50,11 +48,16 @@ export default function ExploringFashionProductionPage() {
         <TopicCard slug="propuestas">
           <TopicCard.Title>Propuestas de Producción</TopicCard.Title>
           <TopicCard.Description>
-            En esta sección, exploraremos en profundidad las propuestas de
-            producción de moda, incluyendo conceptos, moodboards y planes de
-            ejecución.
+            Propuestas de producción de moda realizadas durante el curso.
           </TopicCard.Description>
           <TopicCard.Link href="/curiosities/exploring-fashion-production/propuestas">
+            {'Abrir ->'}
+          </TopicCard.Link>
+        </TopicCard>
+        <TopicCard slug="favoritos">
+          <TopicCard.Title>Favoritos</TopicCard.Title>
+          <TopicCard.Description>Los que me gustaron</TopicCard.Description>
+          <TopicCard.Link href="/curiosities/exploring-fashion-production/favoritos">
             {'Abrir ->'}
           </TopicCard.Link>
         </TopicCard>

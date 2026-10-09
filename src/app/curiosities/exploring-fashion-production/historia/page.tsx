@@ -8,7 +8,7 @@ export default function FashionHistoryPage() {
       title="Historia de la Moda"
       description="Pequeño paso por la historia de la moda."
     >
-      <h2>Analisis del periodo Romantico</h2>
+      <h2>Periodo Romantico</h2>
       El período romántico fue un período de transición del año 1820 en donde se
       deja atrás el estilo Imperio enfatizando la imaginación, emoción,
       individualismo marcando una diferenciación de la clase burguesa
