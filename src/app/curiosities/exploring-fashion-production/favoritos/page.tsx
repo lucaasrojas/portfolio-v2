@@ -6,7 +6,10 @@ export default function FashionHistoryPage() {
   return (
     <SectionPageWrapper title="Mis favoritos" description="">
       {favoriteList.map((favorite) => (
-        <DesignerSection designer={favorite} />
+        <DesignerSection
+          key={favorite.designer + favorite.season}
+          designer={favorite}
+        />
       ))}
     </SectionPageWrapper>
   );

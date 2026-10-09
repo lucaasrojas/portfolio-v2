@@ -14,6 +14,7 @@ export function DesignerSection({
       <div className="flex flex-wrap  gap-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {designer.images.map((img) => (
           <Image
+            key={img}
             src={img}
             alt={''}
             width={400}

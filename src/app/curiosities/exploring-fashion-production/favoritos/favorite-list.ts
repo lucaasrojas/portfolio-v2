@@ -1,4 +1,4 @@
-export default [
+const favorites = [
   {
     season: 'SS 27',
     designer: 'Selkie',
@@ -61,3 +61,5 @@ export default [
     ],
   },
 ];
+
+export default favorites;
