@@ -1,5 +1,41 @@
 import { SectionPageWrapper } from '@/components/ui/section-page-wrapper';
 import { TopicCard } from '@/components/ui/topic-card';
+const BASE_SLUG = '/curiosities/exploring-fashion-production';
+
+const SECTIONS = [
+  {
+    slug: 'producciones',
+    title: 'Producciones',
+    description: 'Las producciones que realice',
+    href: `${BASE_SLUG}/producciones`,
+  },
+  {
+    slug: 'analisis-de-campanas',
+    title: 'Análisis de Campañas',
+    description: 'Análisis de campañas elaboradas durante el curso.',
+    href: `${BASE_SLUG}/analisis-de-campanas`,
+  },
+  {
+    slug: 'historia',
+    title: 'Historia de la Moda',
+    description:
+      'La historia de la moda, desde sus orígenes analizando su evolución e impacto.',
+    href: `${BASE_SLUG}/historia`,
+  },
+  {
+    slug: 'propuestas',
+    title: 'Propuestas de Producción',
+    description:
+      'Propuestas de producción de moda realizadas durante el curso.',
+    href: `${BASE_SLUG}/propuestas`,
+  },
+  {
+    slug: 'favoritos',
+    title: 'Favoritos',
+    description: 'Los que me gustaron',
+    href: `${BASE_SLUG}/favoritos`,
+  },
+];
 
 export default function ExploringFashionProductionPage() {
   return (
@@ -26,41 +62,13 @@ export default function ExploringFashionProductionPage() {
         </li>
       </ul>
       <div className="flex flex-col gap-4 my-4">
-        <TopicCard slug="analisis-de-campanas">
-          <TopicCard.Title>Analisis de Campañas y Diseñadores</TopicCard.Title>
-          <TopicCard.Description>
-            Análisis de campañas elaboaradas durante el curso.
-          </TopicCard.Description>
-          <TopicCard.Link href="/curiosities/exploring-fashion-production/analisis-de-campanas">
-            {'Abrir ->'}
-          </TopicCard.Link>
-        </TopicCard>
-        <TopicCard slug="historia">
-          <TopicCard.Title>Historia de la Moda</TopicCard.Title>
-          <TopicCard.Description>
-            La historia de la moda, desde sus orígenes analizando su evolución e
-            impacto.
-          </TopicCard.Description>
-          <TopicCard.Link href="/curiosities/exploring-fashion-production/historia">
-            {'Abrir ->'}
-          </TopicCard.Link>
-        </TopicCard>
-        <TopicCard slug="propuestas">
-          <TopicCard.Title>Propuestas de Producción</TopicCard.Title>
-          <TopicCard.Description>
-            Propuestas de producción de moda realizadas durante el curso.
-          </TopicCard.Description>
-          <TopicCard.Link href="/curiosities/exploring-fashion-production/propuestas">
-            {'Abrir ->'}
-          </TopicCard.Link>
-        </TopicCard>
-        <TopicCard slug="favoritos">
-          <TopicCard.Title>Favoritos</TopicCard.Title>
-          <TopicCard.Description>Los que me gustaron</TopicCard.Description>
-          <TopicCard.Link href="/curiosities/exploring-fashion-production/favoritos">
-            {'Abrir ->'}
-          </TopicCard.Link>
-        </TopicCard>
+        {SECTIONS.map((section) => (
+          <TopicCard slug={section.slug} key={section.slug}>
+            <TopicCard.Title>{section.title}</TopicCard.Title>
+            <TopicCard.Description>{section.description}</TopicCard.Description>
+            <TopicCard.Link href={section.href}>{'Abrir ->'}</TopicCard.Link>
+          </TopicCard>
+        ))}
       </div>
     </SectionPageWrapper>
   );
